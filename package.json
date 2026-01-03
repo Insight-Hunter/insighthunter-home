@@ -17,13 +17,17 @@
 		"@astrojs/rss": "4.0.14",
 		"@astrojs/sitemap": "3.6.0",
 		"astro": "5.16.2",
-		"typescript": "5.9.3"
+		"typescript": "5.9.3",
+		"scripts": {
+
+}
 	},
 	"devDependencies": {
 		"wrangler": "4.56.0"
 	},
 	"private": true,
 	"scripts": {
+		"setup:structure": "ts-node scripts/insight-create-structure.ts",
 		"astro": "astro",
 		"build": "astro build",
 		"cf-typegen": "wrangler types",
