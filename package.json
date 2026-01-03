@@ -27,7 +27,7 @@
 	},
 	"private": true,
 	"scripts": {
-		"setup:structure": "ts-node scripts/insight-create-structure.ts",
+		"setup:structure": "ts-node scripts/create-neonmint-structure.ts",
 		"astro": "astro",
 		"build": "astro build",
 		"cf-typegen": "wrangler types",
