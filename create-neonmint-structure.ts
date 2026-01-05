@@ -1,4 +1,4 @@
-// create-neonmint-structure.ts (updated with Tailwind CSS v4 integration)
+// create-neonmint-structure.ts (updated with site-wide navigation, dark mode, view transitions, and typography)
 
 import fs from 'fs';
 import path from 'path';
@@ -32,7 +32,17 @@ ensureDir('public');
 ensureDir('public/images/posts');
 ensureDir('public/images/projects');
 
-// Favicon & manifest placeholders
+// Placeholder public images
+createFile('public/images/projects/example.jpg', '// Placeholder project image');
+createFile('public/images/posts/placeholder.jpg', '// Placeholder post image');
+
+// src/assets/ for optimized images
+ensureDir('src/assets/posts');
+ensureDir('src/assets/projects');
+createFile('src/assets/posts/example-hero.jpg', '// Placeholder hero image');
+createFile('src/assets/projects/example.jpg', '// Placeholder project image');
+
+// Favicon & manifest
 const publicFiles = [
   'android-chrome-192x192.png',
   'android-chrome-512x512.png',
@@ -59,16 +69,17 @@ ensureDir('src/scripts');
 ensureDir('src/styles');
 ensureDir('src/utils');
 
-// Content collections directories
+// Content collections
 ensureDir('src/content/blog');
 ensureDir('src/content/projects');
 
-// Example content files
+// Example content
 createFile('src/content/blog/example-post.md', `---
 title: "Example Blog Post"
 description: "This is a placeholder blog post using content collections."
 pubDate: 2026-01-01
 tags: ["example", "astro"]
+heroImage: "/assets/posts/example-hero.jpg"
 ---
 
 Welcome to my first blog post created with Astro content collections!
@@ -85,95 +96,253 @@ This is the second example post.
 `);
 
 createFile('src/content/projects/example-project.md', `---
-title: "Insight Hunter"
+title: "Example Project"
 description: "A showcase project using content collections."
 pubDate: 2026-01-01
 techs: ["Astro", "TypeScript"]
 featured: true
-image: "/images/projects/insight-hunter-hero-image.png"
-link: "https://github.com/Insight-Hunter/insighthunter-home.git "
+image: "/assets/projects/example.jpg"
+link: "https://github.com/example/repo"
 ---
 
 Description of the example project.
 `);
 
-// src/layouts - updated to import Tailwind styles and use Tailwind classes
-const layoutFiles = [
-  'Layout.astro',
-  'MarkdownAbout.astro',
-  'MarkdownPostLayout.astro',
-  'ProjectLayout.astro',
-];
-layoutFiles.forEach((file) =>
-  createFile(path.join('src/layouts', file), `---
-import '../styles/tailwind.css';
+// Tailwind configuration (now with config file for typography plugin)
+createFile('tailwind.config.mjs', `import typography from '@tailwindcss/typography';
+
+export default {
+  content: ['./src/**/*.{astro,html,js,jsx,md,mdx,ts,tsx}'],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        background: 'var(--color-background)',
+        foreground: 'var(--color-foreground)',
+        card: 'var(--color-card)',
+        accent: 'var(--color-accent)',
+        'muted-foreground': 'var(--color-muted-foreground)',
+      },
+    },
+  },
+  plugins: [typography],
+};
+`);
+
+createFile('src/styles/tailwind.css', `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-background: oklch(0.99 0.005 240);
+  --color-foreground: oklch(0.2 0.05 240);
+  --color-card: oklch(0.97 0.005 240);
+  --color-accent: oklch(0.7 0.2 160); /* Mint neon accent */
+  --color-muted-foreground: oklch(0.5 0.02 240);
+}
+
+.dark {
+  --color-background: oklch(0.12 0.02 240);
+  --color-foreground: oklch(0.95 0.05 240);
+  --color-card: oklch(0.18 0.02 240);
+  --color-muted-foreground: oklch(0.65 0.02 240);
+  --color-accent: oklch(0.8 0.25 160);
+}
+
+body {
+  @apply bg-background text-foreground transition-colors duration-300;
+}
+`);
+
+// Base Layout with Header, Footer, View Transitions, and client scripts
+createFile('src/layouts/Layout.astro', `---
+import { ClientRouter } from 'astro:transitions';
 const { title = 'NeonMint' } = Astro.props;
 ---
 
-<html lang="en">
+<!doctype html>
+<html lang="en" class="scroll-smooth">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
+    <ClientRouter />
   </head>
-  <body class="min-h-screen bg-background text-foreground">
-    <slot />
+  <body class="flex flex-col min-h-screen">
+    <header class="bg-card shadow-md sticky top-0 z-50">
+      <nav class="container mx-auto px-4 py-4">
+        <div class="flex justify-between items-center">
+          <a href="/" class="text-2xl font-bold text-accent">NeonMint</a>
+          <ul class="hidden md:flex items-center space-x-8">
+            <li><a href="/" class="hover:text-accent transition">Home</a></li>
+            <li><a href="/blog" class="hover:text-accent transition">Blog</a></li>
+            <li><a href="/portfolio" class="hover:text-accent transition">Portfolio</a></li>
+            <li><a href="/about-me" class="hover:text-accent transition">About</a></li>
+          </ul>
+          <div class="flex items-center space-x-4">
+            <button id="theme-toggle" aria-label="Toggle dark mode" class="p-2 rounded hover:bg-muted">
+              <!-- Sun icon (light mode) -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 dark:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.636 6.636l-.707-.707m12.728 0l-.707.707M6.636 17.636l-.707.707m6.364 0v-1m0-9v-1" />
+              </svg>
+              <!-- Moon icon (dark mode) -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 hidden dark:inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </button>
+            <button id="mobile-menu-button" aria-label="Open menu" class="md:hidden p-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <ul id="mobile-menu" class="hidden flex-col space-y-4 mt-4 md:hidden">
+          <li><a href="/" class="block hover:text-accent transition">Home</a></li>
+          <li><a href="/blog" class="block hover:text-accent transition">Blog</a></li>
+          <li><a href="/portfolio" class="block hover:text-accent transition">Portfolio</a></li>
+          <li><a href="/about-me" class="block hover:text-accent transition">About</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <footer class="bg-card py-8 text-center text-muted-foreground">
+      <p>&copy; ${new Date().getFullYear()} NeonMint. All rights reserved.</p>
+    </footer>
+
+    <script>
+      // Dark mode toggle
+      const themeToggle = document.getElementById('theme-toggle');
+      themeToggle.addEventListener('click', () => {
+        if (document.documentElement.classList.contains('dark')) {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+        } else {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+        }
+      });
+
+      // Initialize theme
+      if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+
+      // Mobile menu toggle
+      const mobileButton = document.getElementById('mobile-menu-button');
+      const mobileMenu = document.getElementById('mobile-menu');
+      mobileButton.addEventListener('click', () => {
+        mobileMenu.classList.toggle('hidden');
+      });
+    </script>
   </body>
 </html>
-`)
-);
-
-// src/pages - updated examples with Tailwind classes
-createFile('src/pages/about-me.md', `# About Me
-
-Your content here.
-
-<div class="mt-8 p-6 bg-card rounded-lg shadow-lg">
-  <p class="text-muted-foreground">Customize this page with Tailwind utilities.</p>
-</div>
 `);
 
-createFile('src/pages/index.astro', `---
-import Layout from '../layouts/BaseLayout.astro';
+// Wrapper layouts
+createFile('src/layouts/MarkdownPostLayout.astro', `---
+import Layout from './Layout.astro';
 ---
 
-<Layout title="Home">
-  <main class="container mx-auto px-4 py-16">
-    <h1 class="text-4xl font-bold text-center mb-8">Welcome to NeonMint</h1>
-    <p class="text-xl text-center text-muted-foreground">A modern portfolio and blog built with Astro and Tailwind CSS.</p>
-  </main>
+<Layout title={Astro.props.title}>
+  <article class="container mx-auto px-4 py-16 prose dark:prose-invert max-w-3xl mx-auto">
+    <slot />
+  </article>
 </Layout>
 `);
 
-// Dynamic blog pages - enhanced with Tailwind
+createFile('src/layouts/ProjectLayout.astro', `---
+import Layout from './Layout.astro';
+---
+
+<Layout title={Astro.props.title}>
+  <article class="container mx-auto px-4 py-16 max-w-4xl">
+    <slot />
+  </article>
+</Layout>
+`);
+
+createFile('src/layouts/MarkdownAbout.astro', `---
+import Layout from './Layout.astro';
+---
+
+<Layout title="About Me">
+  <section class="container mx-auto px-4 py-16 prose dark:prose-invert max-w-3xl mx-auto">
+    <slot />
+  </section>
+</Layout>
+`);
+
+// Pages updated to use consistent styling
+createFile('src/pages/index.astro', `---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Home">
+  <section class="container mx-auto px-4 py-20 text-center">
+    <h1 class="text-5xl font-bold mb-8">Welcome to NeonMint</h1>
+    <p class="text-xl text-muted-foreground mb-12">A modern personal portfolio and blog built with Astro, Tailwind CSS, and cutting-edge features.</p>
+    <div class="grid md:grid-cols-2 gap-12">
+      <a href="/blog" class="bg-card p-8 rounded-lg shadow hover:shadow-xl transition">
+        <h2 class="text-3xl font-semibold mb-4">Blog →</h2>
+        <p class="text-muted-foreground">Read my latest thoughts and tutorials.</p>
+      </a>
+      <a href="/portfolio" class="bg-card p-8 rounded-lg shadow hover:shadow-xl transition">
+        <h2 class="text-3xl font-semibold mb-4">Portfolio →</h2>
+        <p class="text-muted-foreground">Explore my projects and work.</p>
+      </a>
+    </div>
+  </section>
+</Layout>
+`);
+
+createFile('src/pages/about-me.md', `---
+layout: ../../layouts/MarkdownAbout.astro
+---
+
+# About Me
+
+Introduce yourself here. This page uses the shared site layout with navigation and dark mode support.
+`);
+
 createFile('src/pages/blog/index.astro', `---
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import { Image } from 'astro:assets';
 
 const posts = await getCollection('blog');
 const sortedPosts = posts.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
 <Layout title="Blog">
-  <main class="container mx-auto px-4 py-16">
-    <h1 class="text-4xl font-bold mb-12 text-center">Blog Posts</h1>
+  <section class="container mx-auto px-4 py-16">
+    <h1 class="text-5xl font-bold mb-12 text-center">Blog Posts</h1>
     <ul class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
       {sortedPosts.map(post => (
-        <li class="bg-card rounded-lg shadow hover:shadow-lg transition">
-          <a href={\`/blog/\${post.slug}\`} class="block p-6">
-            <h2 class="text-2xl font-semibold mb-2">{post.data.title}</h2>
-            <time class="text-sm text-muted-foreground">{post.data.pubDate.toLocaleDateString()}</time>
+        <li class="bg-card rounded-lg shadow hover:shadow-xl transition">
+          <a href={\`/blog/\${post.slug}\`} class="block">
+            {post.data.heroImage && (
+              <Image src={post.data.heroImage} alt={\`Hero for \${post.data.title}\`} width={800} height={400} class="w-full rounded-t-lg object-cover" />
+            )}
+            <div class="p-6">
+              <h2 class="text-2xl font-semibold mb-2">{post.data.title}</h2>
+              <time class="text-sm text-muted-foreground">{post.data.pubDate.toLocaleDateString()}</time>
+            </div>
           </a>
         </li>
       ))}
     </ul>
-  </main>
+  </section>
 </Layout>
 `);
 
 createFile('src/pages/blog/[slug].astro', `---
-import { getCollection, getEntry } from 'astro:content';
-import Layout from '../../layouts/MarkdownPostLayout.astro';
+import { getEntry } from 'astro:content';
+import MarkdownPostLayout from '../../layouts/MarkdownPostLayout.astro';
 
 const { slug } = Astro.params;
 const post = await getEntry('blog', slug);
@@ -185,47 +354,51 @@ if (!post) {
 const { Content } = await post.render();
 ---
 
-<Layout title={post.data.title}>
-  <article class="container mx-auto px-4 py-16 prose prose-lg max-w-3xl mx-auto">
-    <header class="mb-12 text-center">
-      <h1 class="text-5xl font-bold mb-4">{post.data.title}</h1>
-      <time class="text-muted-foreground">{post.data.pubDate.toLocaleDateString()}</time>
-      {post.data.tags && <p class="mt-4">Tags: {post.data.tags.join(', ')}</p>}
-    </header>
-    <Content />
-  </article>
-</Layout>
+<MarkdownPostLayout title={post.data.title}>
+  <header class="mb-12 text-center -mt-8">
+    <h1 class="text-5xl font-bold mb-4">{post.data.title}</h1>
+    <time class="text-muted-foreground">{post.data.pubDate.toLocaleDateString()}</time>
+    {post.data.tags && <p class="mt-4 text-muted-foreground">Tags: {post.data.tags.join(', ')}</p>}
+  </header>
+  <Content />
+</MarkdownPostLayout>
 `);
 
-// Dynamic portfolio pages - enhanced with Tailwind
 createFile('src/pages/portfolio/index.astro', `---
 import { getCollection } from 'astro:content';
 import Layout from '../../layouts/Layout.astro';
+import { Image } from 'astro:assets';
 
 const projects = await getCollection('projects');
 const sortedProjects = projects.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
 <Layout title="Portfolio">
-  <main class="container mx-auto px-4 py-16">
-    <h1 class="text-4xl font-bold mb-12 text-center">Projects</h1>
+  <section class="container mx-auto px-4 py-16">
+    <h1 class="text-5xl font-bold mb-12 text-center">Projects</h1>
     <ul class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
       {sortedProjects.map(project => (
-        <li class="bg-card rounded-lg shadow hover:shadow-lg transition">
-          <a href={\`/portfolio/\${project.slug}\`} class="block p-6">
-            <h2 class="text-2xl font-semibold mb-2">{project.data.title}</h2>
-            {project.data.featured && <span class="text-sm text-accent">(Featured)</span>}
+        <li class="bg-card rounded-lg shadow hover:shadow-xl transition">
+          <a href={\`/portfolio/\${project.slug}\`} class="block">
+            {project.data.image && (
+              <Image src={project.data.image} alt={\`Cover for \${project.data.title}\`} width={800} height={600} class="w-full rounded-t-lg object-cover" />
+            )}
+            <div class="p-6">
+              <h2 class="text-2xl font-semibold mb-2">{project.data.title}</h2>
+              {project.data.featured && <span class="text-sm text-accent">(Featured)</span>}
+            </div>
           </a>
         </li>
       ))}
     </ul>
-  </main>
+  </section>
 </Layout>
 `);
 
 createFile('src/pages/portfolio/[slug].astro', `---
 import { getEntry } from 'astro:content';
-import Layout from '../../layouts/ProjectLayout.astro';
+import ProjectLayout from '../../layouts/ProjectLayout.astro';
+import { Image } from 'astro:assets';
 
 const { slug } = Astro.params;
 const project = await getEntry('projects', slug);
@@ -237,64 +410,56 @@ if (!project) {
 const { Content } = await project.render();
 ---
 
-<Layout title={project.data.title}>
-  <article class="container mx-auto px-4 py-16 max-w-4xl">
-    <h1 class="text-5xl font-bold mb-6">{project.data.title}</h1>
-    <p class="text-xl text-muted-foreground mb-8">{project.data.description}</p>
-    <p class="mb-4">Technologies: <span class="font-medium">{project.data.techs.join(', ')}</span></p>
-    {project.data.link && <p class="mb-8"><a href={project.data.link} target="_blank" class="text-accent underline">View Project →</a></p>}
-    {project.data.image && <img src={project.data.image} alt={project.data.title} class="w-full rounded-lg shadow-lg mb-8" />}
-    <div class="prose prose-lg">
-      <Content />
-    </div>
-  </article>
+<ProjectLayout title={project.data.title}>
+  <h1 class="text-5xl font-bold mb-6">{project.data.title}</h1>
+  <p class="text-xl text-muted-foreground mb-8">{project.data.description}</p>
+  <p class="mb-4">Technologies: <span class="font-medium">{project.data.techs.join(', ')}</span></p>
+  {project.data.link && <p class="mb-8"><a href={project.data.link} target="_blank" class="text-accent underline hover:opacity-80">View Project →</a></p>}
+  {project.data.image && <Image src={project.data.image} alt={project.data.title} width={1200} height={800} class="w-full rounded-lg shadow-lg mb-8 object-cover" />}
+  <div class="prose dark:prose-invert">
+    <Content />
+  </div>
+</ProjectLayout>
+`);
+
+createFile('src/pages/404.astro', `---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="404 - Not Found">
+  <section class="container mx-auto px-4 py-32 text-center">
+    <h1 class="text-7xl font-bold mb-8">404</h1>
+    <p class="text-3xl mb-12 text-muted-foreground">Page Not Found</p>
+    <a href="/" class="text-xl text-accent underline hover:opacity-80">Return to Home →</a>
+  </section>
 </Layout>
 `);
 
-// Tailwind CSS file
-createFile('src/styles/tailwind.css', `@import "tailwindcss";
-
-@theme {
-  --color-background: oklch(0.98 0.01 240);
-  --color-foreground: oklch(0.2 0.05 240);
-  --color-card: oklch(0.95 0.01 240);
-  --color-accent: oklch(0.6 0.2 280);
-  --color-muted-foreground: oklch(0.5 0.02 240);
-}
-
-/* Optional: Add any custom CSS below */
-`);
-
-// Other files
-createFile('src/pages/robots.txt.ts', '// robots.txt generation\nexport const GET = () => new Response("User-agent: *\\nAllow: /", { headers: { "Content-Type": "text/plain" } });');
-createFile('src/pages/rss.xml.js', '// RSS feed generation - implement using getCollection if desired');
-createFile('src/scripts/menu.js', '// Menu-related JavaScript\n');
-createFile('src/utils/languages.ts', '// Technology/language configuration\nexport const languages: string[] = [];\n');
-
-// Content collections configuration
+// Content collections config (with image schema)
 createFile('src/content/config.ts', `import { z, defineCollection } from 'astro:content';
 
 const blogCollection = defineCollection({
   type: 'content',
-  schema: z.object({
+  schema: ({ image }) => z.object({
     title: z.string(),
     description: z.string(),
     pubDate: z.coerce.date(),
     updatedDate: z.coerce.date().optional(),
     tags: z.array(z.string()).optional(),
     draft: z.boolean().optional().default(false),
+    heroImage: image().optional(),
   }),
 });
 
 const projectsCollection = defineCollection({
   type: 'content',
-  schema: z.object({
+  schema: ({ image }) => z.object({
     title: z.string(),
     description: z.string(),
     pubDate: z.coerce.date(),
     techs: z.array(z.string()),
     featured: z.boolean().optional(),
-    image: z.string().optional(),
+    image: image().optional(),
     link: z.string().url().optional(),
   }),
 });
@@ -305,7 +470,7 @@ export const collections = {
 };
 `);
 
-// Root configuration files - updated for Tailwind v4
+// Root files
 const gitignore = `node_modules/
 dist/
 .env
@@ -326,9 +491,10 @@ const packageJson = JSON.stringify(
       preview: "astro preview",
     },
     dependencies: {
-      astro: "^5.0.0",
+      astro: "^6.0.0",
       "@tailwindcss/vite": "^4.0.0",
       tailwindcss: "^4.0.0",
+      "@tailwindcss/typography": "^0.5.10",
     },
   },
   null,
@@ -343,20 +509,23 @@ export default defineConfig({
   vite: {
     plugins: [tailwindcss()],
   },
-  // Example other integrations (uncomment and install as needed)
-  // integrations: [sitemap(), mdx()],
 });
 `;
 
 const readme = `# NeonMint
 
-An Astro-based personal portfolio and blog with **content collections**, **dynamic routing**, and **Tailwind CSS v4** integration.
+A fully featured Astro-based personal portfolio and blog.
 
 ## Features
-- Type-safe content collections for blog posts and projects
-- Dynamic pages for blog and portfolio with Tailwind-styled layouts
-- Modern Tailwind CSS v4 setup using the official Vite plugin
-- Responsive design with utility classes applied throughout
+- Content collections with type-safe schemas
+- Dynamic routing for blog posts and projects
+- Built-in image optimization (astro:assets)
+- Tailwind CSS v4 with dark mode (class strategy) and typography
+- Responsive navigation header with mobile menu
+- Dark/light mode toggle with system preference support
+- Smooth page transitions via Astro View Transitions
+- Consistent site-wide layout with header and footer
+- Custom 404 page
 
 ## Getting Started
 
@@ -365,14 +534,7 @@ npm install
 npm run dev
 \`\`\`
 
-Tailwind CSS is configured via \`src/styles/tailwind.css\`. Customize themes using the \`@theme\` directive.
-
-Visit example routes:
-- http://localhost:4321/
-- http://localhost:4321/blog
-- http://localhost:4321/blog/example-post
-- http://localhost:4321/portfolio
-- http://localhost:4321/portfolio/example-project
+The site now includes full navigation, dark mode, and smooth transitions between pages.
 `;
 
 const tsconfig = JSON.stringify(
@@ -394,4 +556,4 @@ const rootFiles: Record<string, string> = {
 
 Object.entries(rootFiles).forEach(([filename, content]) => createFile(filename, content));
 
-console.log('\nProject structure creation completed with Tailwind CSS v4 integration.');
+console.log('\nProject structure creation completed with navigation, dark mode, view transitions, and enhanced styling.');
